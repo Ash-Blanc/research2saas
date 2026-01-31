@@ -10,8 +10,7 @@ from agno.tools.arxiv import ArxivTools
 from agno.tools.reasoning import ReasoningTools
 from agno.knowledge.knowledge import Knowledge
 from agno.vectordb.pgvector import PgVector, SearchType
-from agno.models.openai import OpenAI
-from agno.models.anthropic import Claude
+from agno.models.mistral import Mistral
 
 from typing import List, Dict, Optional
 from dataclasses import dataclass
@@ -20,7 +19,7 @@ import asyncio
 # Import our custom modules
 from citation_graph_clustering import CitationGraphAnalyzer, Paper, PaperCluster
 from market_validator import MarketValidator, MarketValidation, ValidationStatus
-from connectedpapers_tool import ConnectedPapersTools
+from semantic_scholar_tools import SemanticScholarTools  # Ultra-fast S2 API client
 
 
 # ============================================================================
@@ -67,10 +66,10 @@ graph_connections_kb = Knowledge(
 # 1. Paper Discovery Agent - finds relevant papers
 paper_discovery_agent = Agent(
     name="Paper Discovery Agent",
-    model=Claude(id="claude-sonnet-4-20250514"),
+    model=Mistral(id="mistral-large-latest"),
     tools=[
         ArxivTools(max_results=10),
-        ConnectedPapersTools()
+        SemanticScholarTools()  # Replaces ConnectedPapers with faster S2 API
     ],
     knowledge=[papers_kb],
     instructions=[
@@ -90,8 +89,8 @@ paper_discovery_agent = Agent(
 # 2. Citation Graph Agent - builds and analyzes citation networks
 citation_graph_agent = Agent(
     name="Citation Graph Analyst",
-    model=Claude(id="claude-sonnet-4-20250514"),
-    tools=[ConnectedPapersTools()],
+    model=Mistral(id="mistral-large-latest"),
+    tools=[SemanticScholarTools()],  # Async S2 client with batch operations
     knowledge=[papers_kb, graph_connections_kb],
     instructions=[
         "You analyze citation networks to find research patterns.",
@@ -110,7 +109,7 @@ citation_graph_agent = Agent(
 # 3. Application Ideation Agent - generates application ideas
 application_brainstormer = Agent(
     name="Application Ideation Agent",
-    model=Claude(id="claude-sonnet-4-20250514"),
+    model=Mistral(id="mistral-large-latest"),
     tools=[ReasoningTools()],
     knowledge=[papers_kb, applications_kb],
     instructions=[
@@ -137,7 +136,7 @@ application_brainstormer = Agent(
 # 4. SaaS Clustering Agent - groups and ranks SaaS ideas
 saas_clustering_agent = Agent(
     name="SaaS Clustering Agent",
-    model=Claude(id="claude-sonnet-4-20250514"),
+    model=Mistral(id="mistral-large-latest"),
     tools=[ReasoningTools()],
     knowledge=[applications_kb, saas_kb],
     instructions=[
@@ -167,7 +166,7 @@ saas_clustering_agent = Agent(
 # 5. Market Validation Agent - validates ideas against real market
 market_validation_agent = Agent(
     name="Market Validation Agent",
-    model=Claude(id="claude-sonnet-4-20250514"),
+    model=Mistral(id="mistral-large-latest"),
     tools=[],  # Will use web_search from coordinator
     knowledge=[saas_kb],
     instructions=[
@@ -192,8 +191,8 @@ market_validation_agent = Agent(
 # 6. Research Frontier Scout - finds cutting-edge work
 research_frontier_agent = Agent(
     name="Research Frontier Scout",
-    model=Claude(id="claude-sonnet-4-20250514"),
-    tools=[ArxivTools(), ConnectedPapersTools()],
+    model=Mistral(id="mistral-large-latest"),
+    tools=[ArxivTools(), SemanticScholarTools()],  # S2 find_research_frontier method
     knowledge=[papers_kb],
     instructions=[
         "You identify cutting-edge research directions.",
@@ -212,8 +211,8 @@ research_frontier_agent = Agent(
 # 7. Technology Bridge Agent - connects disparate research areas
 tech_bridge_agent = Agent(
     name="Technology Bridge Agent",
-    model=Claude(id="claude-sonnet-4-20250514"),
-    tools=[ConnectedPapersTools()],
+    model=Mistral(id="mistral-large-latest"),
+    tools=[SemanticScholarTools()],  # S2 find_cross_domain_papers method
     knowledge=[papers_kb, graph_connections_kb],
     instructions=[
         "You find cross-domain research connections.",
@@ -395,7 +394,7 @@ class SaaSToImprovementWorkflow(Workflow):
         print("🔍 Step 1: Identifying core technologies...")
         tech_agent = Agent(
             name="Tech Identifier",
-            model=Claude(id="claude-sonnet-4-20250514"),
+            model=Mistral(id="mistral-large-latest"),
             instructions=[
                 "Analyze this SaaS product and identify:",
                 "- Core technologies used",
@@ -431,7 +430,7 @@ class SaaSToImprovementWorkflow(Workflow):
         if results["papers"]:
             improvement_agent = Agent(
                 name="Improvement Generator",
-                model=Claude(id="claude-sonnet-4-20250514"),
+                model=Mistral(id="mistral-large-latest"),
                 tools=[ReasoningTools()],
                 instructions=[
                     "Given research papers and a SaaS product:",
@@ -469,7 +468,7 @@ class SaaSToImprovementWorkflow(Workflow):
 
 router_agent = Agent(
     name="Pipeline Router",
-    model=Claude(id="claude-sonnet-4-20250514"),
+    model=Mistral(id="mistral-large-latest"),
     instructions=[
         "You route user requests to the appropriate workflow.",
         "Routes:",

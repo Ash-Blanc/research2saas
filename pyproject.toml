@@ -1,7 +1,89 @@
 [project]
 name = "research2saas"
 version = "0.1.0"
-description = "Add your description here"
+description = "Transform academic research into validated SaaS product opportunities"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.11"
+authors = [
+    { name = "Ash Blanc", email = "ab916@example.com" }
+]
+keywords = ["research", "saas", "semantic-scholar", "agno", "ai-agents"]
+dependencies = [
+    # Core framework
+    "agno>=0.1.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    
+    # HTTP & Async
+    "httpx>=0.27.0",
+    "aiohttp>=3.9.0",
+    "backoff>=2.2.0",
+    
+    # Caching
+    "cachetools>=5.3.0",
+    
+    # LLM Providers
+    "mistralai>=0.1.0",
+    
+    # Research tools
+    "arxiv>=2.1.0",
+    
+    # Graph analysis
+    "networkx>=3.0",
+    "python-louvain>=0.16",
+    
+    # Data processing
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    
+    # Environment
+    "python-dotenv>=1.0.0",
+    
+    # Logging
+    "loguru>=0.7.0",
+    "structlog>=24.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "black>=23.10.0",
+]
+
+full = [
+    "beautifulsoup4>=4.12.0",
+    "selenium>=4.15.0",
+    "spacy>=3.7.0",
+    "sentence-transformers>=2.2.0",
+    "scikit-learn>=1.3.0",
+    "matplotlib>=3.8.0",
+    "plotly>=5.18.0",
+    "pgvector>=0.2.0",
+    "psycopg2-binary>=2.9.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/research2saas"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "UP", "B", "C4"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+

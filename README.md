@@ -6,98 +6,34 @@
 
 This platform bridges the gap between academic research and commercial applications by:
 
-1. **Finding relevant papers** for any raw idea using semantic search
+1. **Finding relevant papers** using Semantic Scholar API with async, rate-limited requests
 2. **Building citation graphs** to discover research clusters and evolution paths
 3. **Generating application ideas** from theoretical research
 4. **Clustering ideas** into coherent SaaS products
 5. **Validating against market** reality (competitors, funding, patents)
 
-### The Problem It Solves
-
-- **Researchers** publish groundbreaking work but often don't explore commercial applications
-- **Entrepreneurs** miss opportunities because they don't dive deep into arXiv
-- There's a **massive translation gap** between academic papers and actionable business ideas
-
-This platform is the bridge.
-
-## 🏗️ Architecture
-
-### Bidirectional Pipelines
+## 🏗️ Package Structure
 
 ```
-Pipeline 1: Idea → Papers → Applications → SaaS Ideas
-┌─────────────┐    ┌──────────────┐    ┌────────────────┐    ┌─────────────┐
-│   Raw Idea  │───▶│ Find Papers  │───▶│ Citation Graph │───▶│ Application │
-│             │    │ (ArXiv +     │    │ Analysis       │    │ Ideation    │
-│             │    │  Connected   │    │ (Clusters)     │    │             │
-└─────────────┘    │  Papers)     │    └────────────────┘    └─────────────┘
-                   └──────────────┘                                  │
-                                                                      ▼
-                                                            ┌─────────────────┐
-                                                            │ SaaS Clustering │
-                                                            │ & Ranking       │
-                                                            └─────────────────┘
-                                                                      │
-                                                                      ▼
-                                                            ┌─────────────────┐
-                                                            │ Market          │
-                                                            │ Validation      │
-                                                            └─────────────────┘
-
-Pipeline 2: SaaS → Papers → Improvements
-┌─────────────┐    ┌──────────────┐    ┌────────────────┐    ┌─────────────┐
-│ Existing    │───▶│ Identify     │───▶│ Find Relevant  │───▶│ Generate    │
-│ SaaS/Product│    │ Technologies │    │ Papers         │    │ Improvement │
-│             │    │              │    │                │    │ Ideas       │
-└─────────────┘    └──────────────┘    └────────────────┘    └─────────────┘
+src/research2saas/
+├── __init__.py          # Public API exports
+├── config.py            # Centralized settings (pydantic-settings)
+├── models/              # Shared Pydantic models
+│   ├── paper.py         # Paper, PaperCluster
+│   └── validation.py    # MarketValidation, CompetitorAnalysis
+├── tools/               # Agno toolkits
+│   └── semantic_scholar.py  # SemanticScholarTools (async, rate-limited)
+├── analysis/            # Analysis engines
+│   ├── citation_graph.py    # CitationGraphAnalyzer
+│   └── market_validator.py  # MarketValidator
+├── agents/              # Agno agent definitions
+│   ├── discovery.py     # paper_discovery_agent
+│   ├── ideation.py      # application_brainstormer
+│   └── validation.py    # market_validation_agent
+└── workflows/           # End-to-end pipelines
+    ├── idea_to_saas.py       # Paper → SaaS Concepts
+    └── saas_to_improvement.py # SaaS → Research Improvements
 ```
-
-### Key Components
-
-#### 1. Citation Graph Analyzer (`citation_graph_clustering.py`)
-- Builds citation networks using ConnectedPapers
-- Detects research communities (Louvain algorithm)
-- Finds application pathways (theory → implementation)
-- Tracks research evolution over time
-- Identifies cross-domain bridges
-
-**Key Features:**
-- Community detection for clustering related research
-- PageRank & betweenness centrality for impact scoring
-- Temporal trend analysis (emerging vs. mature fields)
-- Application potential scoring
-
-#### 2. Market Validator (`market_validator.py`)
-- Finds existing competitors via web search
-- Checks patent databases for IP risks
-- Analyzes funding activity in the space
-- Estimates market size and growth rate
-- Detects red flags (legal, ethical, technical)
-
-**Validation Statuses:**
-- `CLEAR_OPPORTUNITY`: Few competitors, strong signals
-- `EMERGING_SPACE`: Some activity, room for innovation
-- `CROWDED_MARKET`: Many existing solutions
-- `HIGH_RISK`: Red flags detected
-- `NEEDS_RESEARCH`: Unclear, needs investigation
-
-#### 3. ConnectedPapers Tool (`connectedpapers_tool.py`)
-Agno toolkit wrapper for `connectedpapers-py`:
-- `get_similar_papers()` - Find similar papers via citation graph
-- `get_prior_works()` - Foundational papers
-- `get_derivative_works()` - Papers building on target
-- `find_application_papers()` - Implementation-focused papers
-- `build_research_lineage()` - Complete research context
-- `find_research_frontier()` - Cutting-edge recent work
-
-#### 4. Agno Integration (`agno_integration.py`)
-Multi-agent orchestration using Agno framework:
-- **Paper Discovery Agent** - Semantic search + citation traversal
-- **Citation Graph Agent** - Network analysis & clustering
-- **Application Brainstormer** - Creative idea generation
-- **SaaS Clustering Agent** - Grouping & ranking ideas
-- **Market Validation Agent** - Real-world validation
-- **Technology Bridge Agent** - Cross-domain connections
 
 ## 🚀 Quick Start
 
@@ -105,89 +41,87 @@ Multi-agent orchestration using Agno framework:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/research-to-saas
-cd research-to-saas
+git clone https://github.com/Ash-Blanc/research2saas
+cd research2saas
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install with uv (recommended)
+uv pip install -e .
 
-# Install dependencies
-pip install -r requirements.txt
+# Or with pip
+pip install -e .
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env with your API keys:
-# - ANTHROPIC_API_KEY
-# - OPENAI_API_KEY
-# - DATABASE_URL (PostgreSQL with pgvector)
+# Edit .env with your API keys (optional - free tier works fine)
 ```
 
-### Database Setup
-
-```bash
-# Install PostgreSQL with pgvector extension
-# On macOS:
-brew install postgresql@15
-brew install pgvector
-
-# Start PostgreSQL
-brew services start postgresql@15
-
-# Create database
-createdb research_saas
-
-# Enable pgvector extension
-psql research_saas -c "CREATE EXTENSION vector;"
-```
-
-### Basic Usage
+### Usage
 
 ```python
-import asyncio
-from agno_integration import IdeaToSaaSWorkflow
+from research2saas import (
+    Paper,
+    SemanticScholarTools,
+    CitationGraphAnalyzer,
+    IdeaToSaaSWorkflow,
+    get_settings,
+)
 
-async def main():
-    workflow = IdeaToSaaSWorkflow()
-    
-    # Transform an idea into validated SaaS concepts
-    results = await workflow.run(
-        "AI system that helps developers fix security vulnerabilities in code"
-    )
-    
-    print(f"Papers Found: {len(results['papers'])}")
-    print(f"SaaS Concepts: {len(results['saas_concepts'])}")
-    print(f"\n{results['summary']}")
+# Use Semantic Scholar tools directly
+tools = SemanticScholarTools()
+paper = await tools.get_paper("arXiv:1706.03762")  # Attention Is All You Need
+lineage = await tools.build_research_lineage(paper["id"])
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# Run the full workflow
+workflow = IdeaToSaaSWorkflow()
+result = await workflow.run(seed_paper_id="arXiv:1706.03762")
+print(f"SaaS Concepts: {len(result.saas_concepts)}")
 ```
 
-## 📊 Performance
+### Running via UI
 
-### Citation Graph Analysis
-- **Graph construction**: ~2-5 seconds per seed paper
-- **Community detection**: <1 second for graphs with <1000 nodes
-- **Pathway finding**: <500ms per query
+The platform is designed to run via an Agno-compatible UI. Configure your agents in the UI and use the exported agents from `research2saas.agents`.
 
-### Market Validation
-- **Competitor search**: ~5-10 seconds (depends on web search)
-- **Patent check**: ~3-5 seconds
-- **Full validation**: ~15-30 seconds per idea
+## 🔧 Key Components
 
-### End-to-End Pipeline
-- **Idea to SaaS**: 2-5 minutes (including LLM calls)
-- **SaaS to Improvement**: 1-3 minutes
+### SemanticScholarTools
 
-## 🗺️ Roadmap
+Async-first toolkit for paper discovery:
+- **Rate limiting**: Token bucket with automatic retry (free tier: 100 req/5min)
+- **Caching**: LRU cache with 1-hour TTL
+- **Batch operations**: Fetch up to 500 papers in one call
+- **ML recommendations**: Native Semantic Scholar recommendations
 
-- [ ] Add support for more paper sources (IEEE, ACM, Nature)
-- [ ] Integrate with Crunchbase API for better funding data
-- [ ] Add patent search via USPTO/EPO APIs
-- [ ] Build interactive citation graph visualization
-- [ ] Add "Research ROI calculator" (paper → product value estimation)
-- [ ] Multi-agent debate for idea validation
-- [ ] Integration with startup accelerators
+### CitationGraphAnalyzer
+
+NetworkX-based graph analysis:
+- Community detection (Louvain algorithm)
+- PageRank & betweenness centrality
+- Application pathway finding
+- Temporal trend analysis
+
+### MarketValidator
+
+Market validation for SaaS ideas:
+- Competitor discovery
+- Patent risk assessment
+- Funding signal detection
+- Market size estimation
+
+## 📊 Configuration
+
+Environment variables (all optional):
+
+```bash
+# Semantic Scholar API (optional - generous free tier available)
+S2_API_KEY=your_key_here
+
+# LLM Provider
+MISTRAL_API_KEY=your_key_here
+
+# Cache settings
+S2_CACHE_TTL=3600
+S2_CACHE_SIZE=1000
+```
 
 ## 📝 License
 
@@ -196,6 +130,5 @@ MIT License - see LICENSE file
 ## 🙏 Acknowledgments
 
 - Built with [Agno](https://agno.com) - Multi-agent framework
-- [ConnectedPapers](https://www.connectedpapers.com) - Citation graph API
+- [Semantic Scholar](https://www.semanticscholar.org) - Paper discovery API
 - [arXiv](https://arxiv.org) - Open access research papers
-- [AlphaXiv](https://alphaxiv.org) - Inspiration for this project
