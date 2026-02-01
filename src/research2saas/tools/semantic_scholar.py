@@ -223,7 +223,6 @@ class SemanticScholarTools(Toolkit):
     """
     
     def __init__(self, config: Optional[S2Config] = None):
-        super().__init__(name="semantic_scholar")
         self.config = config or S2Config()
         self.client = S2AsyncClient(self.config)
         
@@ -238,6 +237,67 @@ class SemanticScholarTools(Toolkit):
             self.config.requests_per_second = 100.0
             self.config.search_rate_limit = 1.0
             logger.info("S2_API_KEY detected - using higher rate limits (100 req/sec)")
+        
+        # Register tools with Agno
+        # Sync tools for agent.run() / agent.print_response()
+        tools = [
+            self.get_paper_sync,
+            self.search_papers_sync,
+            self.find_application_papers_sync,
+        ]
+        
+        # Async tools for agent.arun() / agent.aprint_response()
+        # Format: (async_method, "tool_name")
+        async_tools = [
+            (self.get_paper, "get_paper_sync"),
+            (self.search_papers, "search_papers_sync"),
+            (self.find_application_papers, "find_application_papers_sync"),
+        ]
+        
+        super().__init__(name="semantic_scholar", tools=tools, async_tools=async_tools)
+    
+    # =========================================================================
+    # SYNC WRAPPERS (required by Agno Toolkit for synchronous execution)
+    # =========================================================================
+    
+    def get_paper_sync(self, paper_id: str) -> Dict:
+        """
+        Get detailed information about a single paper.
+        
+        Args:
+            paper_id: Semantic Scholar ID, ArXiv ID, DOI, ACL ID, etc.
+                      Prefix required for non-S2 IDs: 'arXiv:1706.03762', 'DOI:...', etc.
+        
+        Returns:
+            Paper metadata dictionary with id, title, authors, year, abstract, citation_count
+        """
+        return asyncio.get_event_loop().run_until_complete(self.get_paper(paper_id))
+    
+    def search_papers_sync(self, query: str, limit: int = 10) -> List[Dict]:
+        """
+        Search for papers using keywords or natural language.
+        
+        Args:
+            query: Search query (keywords or natural language description)
+            limit: Maximum number of results to return (default: 10)
+        
+        Returns:
+            List of matching papers with id, title, authors, year, abstract, citation_count
+        """
+        return asyncio.get_event_loop().run_until_complete(self.search_papers(query, limit=limit))
+    
+    def find_application_papers_sync(self, paper_id: str, limit: int = 10) -> List[Dict]:
+        """
+        Find papers that represent practical applications or implementations of research.
+        
+        Args:
+            paper_id: Target paper identifier to find applications of
+            limit: Maximum number of application papers to return (default: 10)
+        
+        Returns:
+            List of application-oriented papers with matched_keywords and application_score
+        """
+        return asyncio.get_event_loop().run_until_complete(self.find_application_papers(paper_id, limit=limit))
     
     async def close(self) -> None:
         """Clean up resources"""

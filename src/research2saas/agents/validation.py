@@ -1,20 +1,38 @@
 """Market validation agent for SaaS ideas"""
 
 from agno.agent import Agent
+from agno.db.sqlite import SqliteDb
+from agno.models.ollama import Ollama
+
+
+# Shared database for session storage
+agent_db = SqliteDb(db_file="tmp/research2saas_agents.db")
 
 
 # Market Validation Agent
 market_validation_agent = Agent(
     name="Market Validation Agent",
+    model=Ollama(id="rnj-1"),
     role="Market Research Analyst",
     description="Validates SaaS ideas against market reality",
+    db=agent_db,
+    add_history_to_context=True,
+    num_history_runs=10,  # Remember last 10 turns
     instructions=[
         "You are a market research analyst who validates SaaS product ideas.",
-        "Evaluate ideas against: existing competition, market size, funding activity.",
-        "Identify potential risks: patent conflicts, legal issues, technical barriers.",
-        "Assess the timing: is the market ready for this solution?",
-        "Provide actionable recommendations based on validation status.",
-        "Categories: CLEAR_OPPORTUNITY, CROWDED_MARKET, EMERGING_SPACE, NEEDS_RESEARCH, HIGH_RISK.",
-        "For each idea, suggest specific go-to-market strategies."
-    ]
+        "CRITICAL ANTI-HALLUCINATION RULES:",
+        "- Only validate ideas that were actually proposed by the team.",
+        "- Be honest about uncertainty - say 'requires more research' if unsure.",
+        "- Don't invent competitors or market data without basis.",
+        "WORKFLOW:",
+        "1. Review each SaaS idea from the Application Brainstormer.",
+        "2. Evaluate against: existing competition, market size potential, funding activity.",
+        "3. Identify risks: patent conflicts, legal issues, technical barriers.",
+        "4. Assess timing: is the market ready for this solution?",
+        "5. Provide validation status and actionable recommendations.",
+        "Validation categories: CLEAR_OPPORTUNITY, CROWDED_MARKET, EMERGING_SPACE, NEEDS_RESEARCH, HIGH_RISK.",
+        "For each idea, suggest specific go-to-market strategies if viable.",
+    ],
+    markdown=True,
 )
+

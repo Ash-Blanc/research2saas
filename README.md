@@ -44,15 +44,24 @@ src/research2saas/
 git clone https://github.com/Ash-Blanc/research2saas
 cd research2saas
 
-# Install with uv (recommended)
-uv pip install -e .
+# Install dependencies with uv (recommended)
+uv sync
 
-# Or with pip
-pip install -e .
+# Or install in editable mode
+uv pip install -e .
 
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your API keys (optional - free tier works fine)
+```
+
+**Adding new dependencies:**
+```bash
+# Use uv add (updates pyproject.toml and lockfile automatically)
+uv add package-name
+
+# For dev dependencies
+uv add --dev package-name
 ```
 
 ### Usage
@@ -77,9 +86,44 @@ result = await workflow.run(seed_paper_id="arXiv:1706.03762")
 print(f"SaaS Concepts: {len(result.saas_concepts)}")
 ```
 
-### Running via UI
+### Running the UI and Backend
 
-The platform is designed to run via an Agno-compatible UI. Configure your agents in the UI and use the exported agents from `research2saas.agents`.
+The platform provides an AgentOS backend that you can connect to the Agno UI:
+
+#### Option 1: Use Online Agno UI (Recommended)
+
+```bash
+# 1. Start the backend server (runs on port 7777)
+uv run python server.py
+
+# 2. In your browser, go to: https://os.agno.com
+# 3. Sign in and click "Add new OS"
+# 4. Select "Local" and enter: http://localhost:7777
+# 5. Name it "Research-to-SaaS" and click "Connect"
+```
+
+#### Option 2: Run Local Agent UI
+
+```bash
+# 1. Start the backend
+uv run python server.py
+
+# 2. In a new terminal, install and run Agent UI
+npx create-agent-ui@latest
+cd agent-ui
+npm run dev
+
+# 3. Open browser to: http://localhost:3000
+# 4. Connect to backend: http://localhost:7777
+```
+
+**Available Agents in UI:**
+- 🔍 **Paper Discovery Agent** - Find research papers via ArXiv and Semantic Scholar
+- 🔬 **Application Research Agent** - Discover practical applications of theory
+- 💡 **Application Brainstormer** - Generate SaaS product ideas
+- 🎯 **SaaS Clustering Agent** - Organize ideas into coherent products
+- ✅ **Market Validation Agent** - Validate against real market data
+
 
 ## 🔧 Key Components
 
