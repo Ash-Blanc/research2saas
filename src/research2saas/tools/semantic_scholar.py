@@ -76,16 +76,18 @@ class RateLimiter:
     """Token bucket rate limiter for API calls"""
     
     def __init__(self, rate: int = 100, per: float = 1.0):
+        import time
         self.rate = rate
         self.per = per
         self.tokens = rate
-        self.last_update = asyncio.get_event_loop().time() if asyncio.get_event_loop().is_running() else 0
+        self.last_update = time.time()  # Use time.time() for initialization
         self._lock = asyncio.Lock()
     
     async def acquire(self) -> None:
         """Wait until a request token is available"""
+        import time
         async with self._lock:
-            now = asyncio.get_event_loop().time()
+            now = time.time()  # Use time.time() for consistency
             time_passed = now - self.last_update
             self.tokens = min(self.rate, self.tokens + time_passed * (self.rate / self.per))
             self.last_update = now
@@ -260,6 +262,21 @@ class SemanticScholarTools(Toolkit):
     # SYNC WRAPPERS (required by Agno Toolkit for synchronous execution)
     # =========================================================================
     
+    def _run_async(self, coro):
+        """Run an async coroutine in a sync context, works in thread pools too."""
+        try:
+            # Try to get existing event loop (works in main thread)
+            loop = asyncio.get_running_loop()
+            # If we're already in an async context, we can't use run_until_complete
+            # This shouldn't happen with Agno's sync execution, but just in case
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, coro)
+                return future.result()
+        except RuntimeError:
+            # No running loop - safe to use asyncio.run()
+            return asyncio.run(coro)
+    
     def get_paper_sync(self, paper_id: str) -> Dict:
         """
         Get detailed information about a single paper.
@@ -271,7 +288,7 @@ class SemanticScholarTools(Toolkit):
         Returns:
             Paper metadata dictionary with id, title, authors, year, abstract, citation_count
         """
-        return asyncio.get_event_loop().run_until_complete(self.get_paper(paper_id))
+        return self._run_async(self.get_paper(paper_id))
     
     def search_papers_sync(self, query: str, limit: int = 10) -> List[Dict]:
         """
@@ -284,7 +301,7 @@ class SemanticScholarTools(Toolkit):
         Returns:
             List of matching papers with id, title, authors, year, abstract, citation_count
         """
-        return asyncio.get_event_loop().run_until_complete(self.search_papers(query, limit=limit))
+        return self._run_async(self.search_papers(query, limit=limit))
     
     def find_application_papers_sync(self, paper_id: str, limit: int = 10) -> List[Dict]:
         """
@@ -297,7 +314,7 @@ class SemanticScholarTools(Toolkit):
         Returns:
             List of application-oriented papers with matched_keywords and application_score
         """
-        return asyncio.get_event_loop().run_until_complete(self.find_application_papers(paper_id, limit=limit))
+        return self._run_async(self.find_application_papers(paper_id, limit=limit))
     
     async def close(self) -> None:
         """Clean up resources"""

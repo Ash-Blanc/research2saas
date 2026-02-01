@@ -2,7 +2,8 @@
 
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb
-from agno.models.ollama import Ollama
+
+from ..models import Pollinations
 
 
 # Shared database for session storage
@@ -12,7 +13,7 @@ agent_db = SqliteDb(db_file="tmp/research2saas_agents.db")
 # Market Validation Agent
 market_validation_agent = Agent(
     name="Market Validation Agent",
-    model=Ollama(id="rnj-1"),
+    model=Pollinations(id="nova-fast"),
     role="Market Research Analyst",
     description="Validates SaaS ideas against market reality",
     db=agent_db,

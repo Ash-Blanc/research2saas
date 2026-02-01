@@ -2,7 +2,8 @@
 
 from agno.agent import Agent
 from agno.db.sqlite import SqliteDb
-from agno.models.ollama import Ollama
+
+from ..models import Pollinations
 
 
 # Shared database for session storage
@@ -12,7 +13,7 @@ agent_db = SqliteDb(db_file="tmp/research2saas_agents.db")
 # SaaS Clustering Agent - analyzes clusters of papers for market opportunities
 saas_clustering_agent = Agent(
     name="SaaS Clustering Agent",
-    model=Ollama(id="rnj-1"),
+    model=Pollinations(id="nova-fast"),
     role="Research Cluster Analyzer",
     description="Analyzes research clusters to identify market opportunities",
     db=agent_db,

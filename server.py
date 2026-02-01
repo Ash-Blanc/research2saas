@@ -31,7 +31,7 @@ team_db = SqliteDb(db_file="tmp/research2saas_team.db")
 research_to_saas_team = Team(
     name="Research-to-SaaS Team",
     description="A team that discovers research papers and transforms them into validated SaaS product ideas",
-    model=Ollama(id="rnj-1"),  # Team leader model
+    model=Ollama(id="gemini-3-flash-preview"),  # Team leader model
     db=team_db,
     add_history_to_context=True,
     num_history_runs=10,  # Remember last 10 turns

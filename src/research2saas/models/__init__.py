@@ -1,4 +1,4 @@
-"""Shared data models for research2saas platform"""
+"""Shared data models and LLM providers for research2saas platform"""
 
 from .paper import Paper, PaperCluster
 from .validation import (
@@ -8,8 +8,10 @@ from .validation import (
     FundingSignal,
     MarketValidation,
 )
+from .pollinations import Pollinations
 
 __all__ = [
+    # Data models
     "Paper",
     "PaperCluster",
     "ValidationStatus",
@@ -17,4 +19,7 @@ __all__ = [
     "PatentInfo",
     "FundingSignal",
     "MarketValidation",
+    # LLM providers
+    "Pollinations",
 ]
+

@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     
+    # Pollinations.ai
+    pollinations_api_key: str = ""
+    pollinations_base_url: str = "https://gen.pollinations.ai/v1"
+    pollinations_model: str = "nova-fast"  # openai, mistral, gemini, deepseek, etc.
+    
     # Semantic Scholar
     s2_api_key: str = ""
     s2_base_url: str = "https://api.semanticscholar.org/graph/v1"
@@ -52,4 +57,10 @@ def get_mistral_api_key() -> str:
 
 def get_s2_api_key() -> Optional[str]:
     key = get_settings().s2_api_key
+    return key if key else None
+
+
+def get_pollinations_api_key() -> Optional[str]:
+    """Get Pollinations.ai API key"""
+    key = get_settings().pollinations_api_key
     return key if key else None
